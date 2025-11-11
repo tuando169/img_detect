@@ -25,9 +25,9 @@ def load_model():
     processor = AutoImageProcessor.from_pretrained(MODEL_NAME)
     model = SiglipForImageClassification.from_pretrained(MODEL_NAME)
     id2label = getattr(model.config, "id2label", None)
-    labels[:] = [] if labels else None
+    labels = [] if labels is None else labels
     if id2label:
-        labels = [id2label[str(i)] for i in sorted(map(int, id2label.keys()))]
+        labels = [id2label.get(str(i), id2label.get(i, f"class_{i}")) for i in sorted(map(int, id2label.keys()))]
     else:
         labels = [f"class_{i}" for i in range(model.config.num_labels)]
 
@@ -64,7 +64,3 @@ async def analyze(image: UploadFile = File(...)):
         return JSONResponse({"ok": True, **result})
     except Exception as e:
         return JSONResponse({"ok": False, "error": str(e)}, status_code=500)
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("service:app", host="0.0.0.0", port=int(os.getenv("PORT", "8000")))
